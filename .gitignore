@@ -1,0 +1,10 @@
+*.dll
+*.exe
+*.zip
+build.log
+build-verification.json
+gesture-test.cpp
+gesture-test-result.txt
+installation-result.json
+__pycache__/
+dist/
