@@ -3,9 +3,9 @@ $whExcelRoot = $PSScriptRoot
 $whExcelId = 'excel-wheel-scroll-sheets'
 $whExcelKey = 'HKLM:\SOFTWARE\Windhawk\Engine\Mods\excel-wheel-scroll-sheets'
 $whExcelSource = Join-Path $whExcelRoot 'excel-wheel-scroll-sheets.wh.cpp'
-$whExcelDll = Join-Path $whExcelRoot 'excel-wheel-scroll-sheets_0.5.3.dll'
+$whExcelDll = Join-Path $whExcelRoot 'excel-wheel-scroll-sheets_0.5.4.dll'
 $whExcelTargetSource = 'C:\ProgramData\Windhawk\ModsSource\excel-wheel-scroll-sheets.wh.cpp'
-$whExcelTargetDll = 'C:\ProgramData\Windhawk\Engine\Mods\64\excel-wheel-scroll-sheets_0.5.3.dll'
+$whExcelTargetDll = 'C:\ProgramData\Windhawk\Engine\Mods\64\excel-wheel-scroll-sheets_0.5.4.dll'
 $whExcelCreatedKey = $false
 $whExcelCopiedSource = $false
 $whExcelCopiedDll = $false
@@ -19,8 +19,8 @@ try {
     if ((Test-Path -LiteralPath $whExcelTargetSource) -or (Test-Path -LiteralPath $whExcelTargetDll)) {
         throw 'Existing Excel mod files were found; preserve them.'
     }
-    if ((Get-FileHash -LiteralPath $whExcelSource).Hash -ne '189F6C9A3E153848ACCDDD5E2029DAB52C9705E6159241E723CD1E5FED545AD7') { throw 'Source hash mismatch.' }
-    if ((Get-FileHash -LiteralPath $whExcelDll).Hash -ne '9404F4179A3AD2B08CF8DFC729D90459451640FD7D4A55952960B5E246955428') { throw 'DLL hash mismatch.' }
+    if ((Get-FileHash -LiteralPath $whExcelSource).Hash -ne '2CE76CD6A1BDB9475E4D00134559DB5408A6CCDFE6447F3D8E112DF943BCA0D0') { throw 'Source hash mismatch.' }
+    if ((Get-FileHash -LiteralPath $whExcelDll).Hash -ne '3D40DAE61FDA988A1644A08F8F59BD24F6EB5A6998B3DF0B3DEA376CD5F030AE') { throw 'DLL hash mismatch.' }
     Copy-Item -LiteralPath $whExcelSource -Destination $whExcelTargetSource
     $whExcelCopiedSource = $true
     Copy-Item -LiteralPath $whExcelDll -Destination $whExcelTargetDll
@@ -28,8 +28,8 @@ try {
     New-Item -Path $whExcelKey | Out-Null
     $whExcelCreatedKey = $true
     foreach ($whExcelPair in @{
-        LibraryFileName='excel-wheel-scroll-sheets_0.5.3.dll'
-        Include='EXCEL.EXE'; Exclude=''; Architecture='x86-64'; Version='0.5.3'
+        LibraryFileName='excel-wheel-scroll-sheets_0.5.4.dll'
+        Include='EXCEL.EXE'; Exclude=''; Architecture='x86-64'; Version='0.5.4'
     }.GetEnumerator()) {
         New-ItemProperty -LiteralPath $whExcelKey -Name $whExcelPair.Key -Value $whExcelPair.Value -PropertyType String | Out-Null
     }
@@ -47,7 +47,7 @@ try {
     # mod directly. Preserve the existing service and client sessions.
     if ((Get-Service Windhawk).Status -ne 'Running') { Start-Service -Name Windhawk }
     $whExcelReport = [ordered]@{
-        Status='installed'; Version='0.5.3'; HorizontalSwitching=$true
+        Status='installed'; Version='0.5.4'; HorizontalSwitching=$true
         Source=$whExcelTargetSource; Dll=$whExcelTargetDll
         ServiceStatus=(Get-Service Windhawk).Status.ToString()
         InstalledAt=(Get-Date).ToString('o')

@@ -11,3 +11,5 @@ dist/
 
 arrow-cache-test.cpp
 arrow-cache-test-result.txt
+host-scope-test.cpp
+host-scope-test-result.txt

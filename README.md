@@ -56,6 +56,7 @@ Windhawk → 已安装的 Mod → **Excel 滚轮切换工作表** → **设置**
 python build.py
 python test-gesture.py
 python test-arrow-cache.py
+python test-host-scope.py
 ```
 
 非默认安装目录可设置 `WINDHAWK_DIR`；特定引擎库可设置 `WINDHAWK_ENGINE_LIB`。
@@ -64,9 +65,11 @@ python test-arrow-cache.py
 
 原生箭头调用、标签栏滚动和用户实际鼠标操作已在一台电脑的 64 位 Excel 中验证。
 其他 Office 版本尚未测试。原生箭头不可用时回退到 Excel 的 `ScrollWorkbookTabs`。
-0.5.3 修复了左侧窗格打开后原生箭头无法定位的问题，并缓存、校验导航按钮以减少重复查找。
-缓存测试覆盖按钮移动、窗口变化及控件身份变化。已在有、无左侧导航窗格时验证双向滚动，
-当前工作表和选中单元格保持不变。实际响应耗时未做计时测量，详情见 [TESTING.md](TESTING.md)。
+0.5.4 将滚轮处理限制在同一 Excel 进程的原生工作簿窗口，箭头搜索限制在底部标签行，
+从工作簿左边界选择前两个按钮，排除侧栏和后面的“…”按钮。调试信息仅写入 Windhawk 日志。
+设置默认英文，中文界面保留中文标签；设置键、默认值和选项值保持不变。
+提取源码的测试覆盖搜索边界、窗口所属进程、缓存失效与手势处理。
+0.5.3 已在有、无左侧导航窗格时验证双向滚动；0.5.4 的现场操作验证情况见 [TESTING.md](TESTING.md)。
 
 ## 实现与许可
 
