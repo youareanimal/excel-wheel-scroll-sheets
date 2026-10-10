@@ -8,3 +8,6 @@ gesture-test-result.txt
 installation-result.json
 __pycache__/
 dist/
+
+arrow-cache-test.cpp
+arrow-cache-test-result.txt

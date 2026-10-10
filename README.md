@@ -26,6 +26,7 @@ Excel 未就绪、编辑单元格或对话框占用焦点时不切换。
 推荐从本仓库下载 `excel-wheel-scroll-sheets.wh.cpp`，在 Windhawk 中点击“新建 Mod”，
 用该文件内容替换编辑器里的源码，然后点击“编译 Mod”。保存并启用后重新打开 Excel。
 此方式由你自己的 Windhawk 编译，适合不同的 Windhawk 引擎版本。
+更新旧安装时，在该 Mod 的“源代码”页替换源码并编译，保留已有设置。
 
 [Releases](https://github.com/youareanimal/excel-wheel-scroll-sheets/releases) 同时提供源码、预编译 DLL 和首次安装脚本的 ZIP 包。
 预编译包使用 Windhawk 1.7.3 的 x64 引擎库构建。首次安装可解压后以管理员身份运行 `install.ps1`；
@@ -54,6 +55,7 @@ Windhawk → 已安装的 Mod → **Excel 滚轮切换工作表** → **设置**
 ```powershell
 python build.py
 python test-gesture.py
+python test-arrow-cache.py
 ```
 
 非默认安装目录可设置 `WINDHAWK_DIR`；特定引擎库可设置 `WINDHAWK_ENGINE_LIB`。
@@ -62,7 +64,9 @@ python test-gesture.py
 
 原生箭头调用、标签栏滚动和用户实际鼠标操作已在一台电脑的 64 位 Excel 中验证。
 其他 Office 版本尚未测试。原生箭头不可用时回退到 Excel 的 `ScrollWorkbookTabs`。
-本版本仅将发布默认值统一为已验证使用的 200ms，并整理发布文件；不改变核心滚动实现。
+0.5.3 修复了左侧窗格打开后原生箭头无法定位的问题，并缓存、校验导航按钮以减少重复查找。
+缓存测试覆盖按钮移动、窗口变化及控件身份变化。已在有、无左侧导航窗格时验证双向滚动，
+当前工作表和选中单元格保持不变。实际响应耗时未做计时测量，详情见 [TESTING.md](TESTING.md)。
 
 ## 实现与许可
 

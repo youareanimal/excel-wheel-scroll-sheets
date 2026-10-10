@@ -1,10 +1,14 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
 // ==WindhawkMod==
 // @id              excel-wheel-scroll-sheets
-// @name            Excel 滚轮切换工作表
-// @description     使用原生箭头滚动标签栏，左右拨动一次切换一张工作表
-// @version         0.5.1
-// @author          本地定制
+// @name            Excel Wheel Sheet Navigation
+// @name:zh-CN      Excel 滚轮切换工作表
+// @description     Scroll the sheet tab strip with the vertical wheel and switch sheets with the horizontal wheel
+// @description:zh-CN 使用原生箭头滚动标签栏，左右拨动一次切换一张工作表
+// @version         0.5.3
+// @author          youareanimal
+// @github          https://github.com/youareanimal
+// @homepage        https://github.com/youareanimal/excel-wheel-scroll-sheets
+// @license         GPL-3.0-or-later
 // @include         EXCEL.EXE
 // @architecture    x86-64
 // @compilerOptions -loleacc -lole32 -loleaut32 -luuid
@@ -14,6 +18,23 @@
 
 // ==WindhawkModReadme==
 /*
+# Excel Wheel Sheet Navigation
+
+For 64-bit desktop Excel on Windows:
+
+- Vertical wheel over the bottom sheet tabs scrolls the tab strip without changing the active sheet.
+- Horizontal wheel over the worksheet or sheet tabs activates the adjacent visible sheet.
+- The tab strip uses Excel's native navigation arrows and animation. If the arrows cannot be used, it falls back to `ScrollWorkbookTabs`.
+- Repeated same-direction horizontal wheel messages are grouped with a 200 ms quiet period by default; the first switch is immediate.
+- Hidden sheets are skipped. Modified wheel input and ordinary vertical worksheet scrolling keep Excel's behavior.
+
+Settings allow direct sheet activation instead of tab scrolling, reversing direction, disabling horizontal switching, and optional wraparound.
+The settings labels below are currently in Chinese; the project README explains the controls.
+No macros are required. Activating a sheet can trigger existing workbook activation events, just like clicking a tab.
+Tested on one installation of 64-bit Microsoft 365 Excel; other Office versions and 32-bit Excel have not been tested.
+
+---
+
 # Excel 滚轮切换工作表
 
 默认操作：标签栏上下滚轮平滑滚动标签；点击标签切换工作表。
@@ -55,7 +76,7 @@
   $description: 使用左下角左右箭头相同的滚动方式，动画速度由 Excel 决定。关闭后直接按标签滚动。
 - horizontalGestureMs: 200
   $name: 左右拨动防重复（毫秒）
-  $description: 同方向连续信号视为一次拨动，停顿达到此时长后可再次切换；反向拨动立即切换。默认 200；若鼠标一次拨动仍切换多张，可适当增加。
+  $description: 同方向连续信号视为一次拨动，停顿达到此时长后可再次切换；反向拨动立即切换。默认 200；若一次拨动仍切换多张，可适当增加。
 - horizontalSwitching: true
   $name: 左右滚轮切换工作表
   $description: 鼠标在单元格或底部工作表标签上时，向右切换下一张，向左切换上一张。关闭后恢复原有横向滚动。
@@ -202,51 +223,172 @@ bool NativeScrollTabs(IDispatch* excelWindow, int steps) {
         DISPATCH_METHOD,&result.value,&argument.value));
 }
 
-// Invoke exactly the existing native arrow button. No temporary overlay,
-// capture, repaint suspension, or replayed picture participates in scrolling.
-bool ScrollUsingNativeArrow(HWND root, POINT point, int direction, int steps) {
-    RECT rootRect{};
-    if (!GetWindowRect(root,&rootRect)) return false;
-    std::vector<RECT> arrows;
-    for (LONG x=rootRect.left+4;
-         x<std::min(rootRect.right,rootRect.left+200); x+=4) {
-        ComPtr<IAccessible> object;
-        Variant child,role;
-        POINT sample{x,point.y};
-        if (FAILED(AccessibleObjectFromPoint(sample,&object.p,&child.value)) ||
-            !object.p) continue;
-        object.p->get_accRole(child.value,&role.value);
-        if (role.value.vt!=VT_I4) continue;
-        if (role.value.lVal==ROLE_SYSTEM_PAGETAB) break;
-        if (role.value.lVal!=ROLE_SYSTEM_PUSHBUTTON) continue;
+// Keep the two buttons immediately before the first visible sheet tab.
+// A left task pane can add earlier buttons and move the arrows past x=200.
+struct NativeArrowCandidates {
+    RECT boxes[2]{};
+    unsigned count=0;
+    void Add(const RECT& box) {
+        if(count) {
+            const RECT& last=boxes[count-1];
+            if(last.left==box.left && last.top==box.top &&
+               last.right==box.right && last.bottom==box.bottom) return;
+        }
+        if(count<2) boxes[count++]=box;
+        else { boxes[0]=boxes[1]; boxes[1]=box; }
+    }
+    const RECT* Select(int direction) const {
+        return count==2 ? &boxes[direction>0?1:0] : nullptr;
+    }
+};
+
+// The discovery algorithm starts at the wheel's sheet tab, not the left edge
+// of the window. Whole tab rectangles can be skipped in one accessibility call.
+template<class Probe>
+bool FindNativeArrowPair(const RECT& rootRect, POINT point, Probe probe,
+                         NativeArrowCandidates& arrows) {
+    RECT rightArrow{};
+    bool haveRight=false;
+    for(LONG x=point.x; x>rootRect.left; x-=4) {
+        LONG role=0;
         RECT box{};
-        if (!GetAccessibleRect(object.p,child.value,box) ||
-            box.bottom-box.top>80 || box.right-box.left>80) continue;
-        arrows.push_back(box);
-        x=std::max(x,box.right-1);
+        bool bounds=false;
+        if(!probe(POINT{x,point.y},role,box,bounds)) continue;
+        if(role==ROLE_SYSTEM_PAGETAB) {
+            if(bounds && box.left<=x) x=std::min(x,box.left);
+            continue;
+        }
+        if(role!=ROLE_SYSTEM_PUSHBUTTON || !bounds ||
+           box.bottom-box.top>80 || box.right-box.left>80) continue;
+        if(!haveRight) { rightArrow=box; haveRight=true; }
+        else {
+            arrows.Add(box); arrows.Add(rightArrow);
+            return true;
+        }
+        x=std::min(x,box.left);
     }
-    if (arrows.size()<2) {
-        RecordDiagnostic(L"nativeArrowOutcome",-1);
-        return false;
+    return false;
+}
+
+struct NativeArrowCache {
+    HWND root=nullptr;
+    RECT rootRect{}, boxes[2]{};
+    HWND targets[2]{};
+    unsigned long long names[2]{};
+    static bool SameRect(const RECT& a,const RECT& b) {
+        return a.left==b.left && a.top==b.top &&
+               a.right==b.right && a.bottom==b.bottom;
     }
-    const RECT& arrow=arrows[direction>0?1:0];
-    POINT center{(arrow.left+arrow.right)/2,(arrow.top+arrow.bottom)/2};
-    HWND target=WindowFromPoint(center);
-    if (!target || GetAncestor(target,GA_ROOT)!=root) return false;
+    bool Matches(HWND current,const RECT& rect,POINT point) const {
+        return root==current && SameRect(rootRect,rect) &&
+            point.y>=boxes[0].top && point.y<boxes[0].bottom &&
+            point.y>=boxes[1].top && point.y<boxes[1].bottom;
+    }
+    bool IdentityMatches(unsigned index,const RECT& rect,HWND target,
+                         unsigned long long name) const {
+        return SameRect(boxes[index],rect) && targets[index]==target &&
+               names[index]==name;
+    }
+    void Reset() { root=nullptr; }
+};
+thread_local NativeArrowCache g_nativeArrowCache;
+
+struct NativeArrowTarget {
+    ComPtr<IAccessible> object;
+    Variant child;
+    RECT box{};
+    HWND target=nullptr;
+    unsigned long long name=0;
+};
+bool ReadNativeArrow(HWND root,const RECT& expected,NativeArrowTarget& arrow) {
+    POINT center{(expected.left+expected.right)/2,
+                 (expected.top+expected.bottom)/2};
+    arrow.target=WindowFromPoint(center);
+    if(!arrow.target || GetAncestor(arrow.target,GA_ROOT)!=root) return false;
+    if(FAILED(AccessibleObjectFromPoint(center,&arrow.object.p,
+                                       &arrow.child.value)) ||
+       !arrow.object.p) return false;
+    Variant role;
+    if(FAILED(arrow.object.p->get_accRole(arrow.child.value,&role.value)) ||
+       role.value.vt!=VT_I4 || role.value.lVal!=ROLE_SYSTEM_PUSHBUTTON ||
+       !GetAccessibleRect(arrow.object.p,arrow.child.value,arrow.box) ||
+       !NativeArrowCache::SameRect(expected,arrow.box)) return false;
+    BSTR name=nullptr;
+    if(SUCCEEDED(arrow.object.p->get_accName(arrow.child.value,&name)) && name) {
+        arrow.name=14695981039346656037ULL;
+        for(unsigned i=0;i<SysStringLen(name);++i) {
+            arrow.name^=static_cast<unsigned short>(name[i]);
+            arrow.name*=1099511628211ULL;
+        }
+    }
+    SysFreeString(name);
+    return true;
+}
+
+bool InvokeNativeArrow(NativeArrowTarget& arrow,int steps) {
     for(int i=0;i<steps;++i) {
-        ComPtr<IAccessible> object;
-        Variant child,state;
-        if (FAILED(AccessibleObjectFromPoint(center,&object.p,&child.value)) ||
-            !object.p) return false;
-        object.p->get_accState(child.value,&state.value);
-        if (state.value.vt==VT_I4 && (state.value.lVal&STATE_SYSTEM_UNAVAILABLE))
-            return true; // A disabled arrow is the native beginning/end limit.
-        HRESULT hr=object.p->accDoDefaultAction(child.value);
+        Variant state;
+        arrow.object.p->get_accState(arrow.child.value,&state.value);
+        if(state.value.vt==VT_I4 && (state.value.lVal&STATE_SYSTEM_UNAVAILABLE))
+            return true;
+        HRESULT hr=arrow.object.p->accDoDefaultAction(arrow.child.value);
         RecordDiagnostic(L"nativeArrowResult",hr);
-        if (FAILED(hr)) return false;
+        if(FAILED(hr)) return false;
     }
     RecordDiagnostic(L"nativeArrowOutcome",1);
     return true;
+}
+
+// Only geometry and fingerprints are cached, never COM interface pointers.
+// Every event checks both controls, so moved panes cannot reuse stale buttons.
+bool ScrollUsingNativeArrow(HWND root,POINT point,int direction,int steps) {
+    RECT rootRect{};
+    if(!GetWindowRect(root,&rootRect)) return false;
+    if(g_nativeArrowCache.Matches(root,rootRect,point)) {
+        NativeArrowTarget cached[2];
+        bool valid=true;
+        for(unsigned i=0;i<2;++i) {
+            if(!ReadNativeArrow(root,g_nativeArrowCache.boxes[i],cached[i]) ||
+               !g_nativeArrowCache.IdentityMatches(i,cached[i].box,
+                    cached[i].target,cached[i].name)) { valid=false; break; }
+        }
+        if(valid) {
+            Wh_Log(L"Native arrow cache hit");
+            return InvokeNativeArrow(cached[direction>0?1:0],steps);
+        }
+    }
+    g_nativeArrowCache.Reset();
+    NativeArrowCandidates arrows;
+    unsigned probes=0;
+    auto probe=[&](POINT sample,LONG& role,RECT& box,bool& bounds) {
+        ++probes;
+        ComPtr<IAccessible> object;
+        Variant child,value;
+        if(FAILED(AccessibleObjectFromPoint(sample,&object.p,&child.value)) ||
+           !object.p || FAILED(object.p->get_accRole(child.value,&value.value)) ||
+           value.value.vt!=VT_I4) return false;
+        role=value.value.lVal;
+        bounds=(role==ROLE_SYSTEM_PAGETAB || role==ROLE_SYSTEM_PUSHBUTTON) &&
+                GetAccessibleRect(object.p,child.value,box);
+        return true;
+    };
+    if(!FindNativeArrowPair(rootRect,point,probe,arrows)) {
+        RecordDiagnostic(L"nativeArrowOutcome",-1);
+        return false;
+    }
+    NativeArrowTarget targets[2];
+    for(unsigned i=0;i<2;++i) {
+        if(!ReadNativeArrow(root,arrows.boxes[i],targets[i])) return false;
+    }
+    g_nativeArrowCache.root=root;
+    g_nativeArrowCache.rootRect=rootRect;
+    for(unsigned i=0;i<2;++i) {
+        g_nativeArrowCache.boxes[i]=targets[i].box;
+        g_nativeArrowCache.targets[i]=targets[i].target;
+        g_nativeArrowCache.names[i]=targets[i].name;
+    }
+    RecordDiagnostic(L"nativeArrowProbeCount",probes);
+    return InvokeNativeArrow(targets[direction>0?1:0],steps);
 }
 
 // One horizontal gesture is a burst of input timestamps. Use the input's

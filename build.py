@@ -22,12 +22,12 @@ elif engines:
 else:
     raise SystemExit('Windhawk x64 engine library not found; set WINDHAWK_ENGINE_LIB.')
 source = root / 'excel-wheel-scroll-sheets.wh.cpp'
-output = root / 'excel-wheel-scroll-sheets_0.5.1.dll'
+output = root / 'excel-wheel-scroll-sheets_0.5.3.dll'
 args = [
     str(compiler / 'bin' / 'clang++.exe'), '-std=c++23', '-O2', '-shared',
     '-DUNICODE', '-D_UNICODE', '-DWINVER=0x0A00', '-D_WIN32_WINNT=0x0A00',
     '-D_WIN32_IE=0x0A00', '-DNTDDI_VERSION=0x0A000008', '-D__USE_MINGW_ANSI_STDIO=0',
-    '-DWH_MOD', '-DWH_MOD_ID=L"excel-wheel-scroll-sheets"', '-DWH_MOD_VERSION=L"0.5.1"',
+    '-DWH_MOD', '-DWH_MOD_ID=L"excel-wheel-scroll-sheets"', '-DWH_MOD_VERSION=L"0.5.3"',
     str(engine), '-x', 'c++', '-', '-include', 'windhawk_api.h',
     '-target', 'x86_64-w64-mingw32', '-Wl,--export-all-symbols', '-o', str(output),
     '-loleacc', '-lole32', '-loleaut32', '-luuid',
