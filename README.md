@@ -1,6 +1,16 @@
 # Excel 滚轮切换工作表
 
-基于 Windhawk 的 Windows 桌面版 Excel 插件：上下滚轮滚动底部标签栏，左右滚轮切换工作表。
+本模组为 Excel 带来类似 WPS 的滚轮工作表导航体验，通过鼠标滚轮即可浏览工作表标签、切换工作表，让包含多个工作表的工作簿操作起来更方便、更快捷。
+
+## 功能简介
+
+1. **左右拨动，快速切换工作表**
+
+   使用支持滚轮左右拨动的鼠标（如罗技 G502），在表格区域左右拨动滚轮，即可切换到上一张或下一张工作表。
+
+2. **上下滚动，轻松浏览工作表标签**
+
+   将鼠标悬停在底部工作表标签栏上，上下滚动滚轮，即可滚动标签栏，查看两侧未显示的标签。此操作不会切换当前工作表，尤其适合工作表数量较多的工作簿。
 
 ## 操作
 
@@ -81,7 +91,20 @@ python test-host-scope.py
 
 ---
 
-English: A Windhawk mod for 64-bit desktop Excel on Windows. Vertical wheel over sheet tabs
-scrolls the tab strip using Excel's native arrows. Horizontal wheel over the worksheet or tabs
-activates the adjacent visible sheet. Repeated same-direction input is grouped with a configurable
-quiet period (200ms by default). Build from the source using Windhawk's local mod editor.
+## English
+
+This mod brings WPS-style mouse wheel navigation to Excel, making it easier and faster to browse sheet tabs and switch between worksheets in workbooks with many sheets.
+
+### Features
+
+1. **Tilt the wheel to switch worksheets**
+
+   With a mouse that supports left/right wheel tilt, such as the Logitech G502, tilt the wheel over the worksheet area to switch to the previous or next worksheet.
+
+2. **Scroll the wheel to browse sheet tabs**
+
+   Hover over the sheet tab bar at the bottom of Excel and scroll the wheel up or down to reveal tabs that are out of view. This scrolls the tab bar without changing the active worksheet—especially useful for workbooks with many sheets.
+
+A Windhawk mod for 64-bit desktop Excel on Windows. Tab-strip scrolling uses Excel's native arrows.
+Repeated same-direction input is grouped with a configurable quiet period (200ms by default).
+Build from the source using Windhawk's local mod editor.
