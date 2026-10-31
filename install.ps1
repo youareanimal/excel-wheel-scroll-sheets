@@ -3,9 +3,9 @@ $whExcelRoot = $PSScriptRoot
 $whExcelId = 'excel-wheel-scroll-sheets'
 $whExcelKey = 'HKLM:\SOFTWARE\Windhawk\Engine\Mods\excel-wheel-scroll-sheets'
 $whExcelSource = Join-Path $whExcelRoot 'excel-wheel-scroll-sheets.wh.cpp'
-$whExcelDll = Join-Path $whExcelRoot 'excel-wheel-scroll-sheets_0.5.4.dll'
+$whExcelDll = Join-Path $whExcelRoot 'excel-wheel-scroll-sheets_0.5.5.dll'
 $whExcelTargetSource = 'C:\ProgramData\Windhawk\ModsSource\excel-wheel-scroll-sheets.wh.cpp'
-$whExcelTargetDll = 'C:\ProgramData\Windhawk\Engine\Mods\64\excel-wheel-scroll-sheets_0.5.4.dll'
+$whExcelTargetDll = 'C:\ProgramData\Windhawk\Engine\Mods\64\excel-wheel-scroll-sheets_0.5.5.dll'
 $whExcelCreatedKey = $false
 $whExcelCopiedSource = $false
 $whExcelCopiedDll = $false
@@ -28,8 +28,8 @@ try {
     New-Item -Path $whExcelKey | Out-Null
     $whExcelCreatedKey = $true
     foreach ($whExcelPair in @{
-        LibraryFileName='excel-wheel-scroll-sheets_0.5.4.dll'
-        Include='EXCEL.EXE'; Exclude=''; Architecture='x86-64'; Version='0.5.4'
+        LibraryFileName='excel-wheel-scroll-sheets_0.5.5.dll'
+        Include='EXCEL.EXE'; Exclude=''; Architecture='x86-64'; Version='0.5.5'
     }.GetEnumerator()) {
         New-ItemProperty -LiteralPath $whExcelKey -Name $whExcelPair.Key -Value $whExcelPair.Value -PropertyType String | Out-Null
     }
@@ -38,7 +38,7 @@ try {
     $whExcelSettings = $whExcelKey + '\Settings'
     New-Item -Path $whExcelSettings | Out-Null
     New-ItemProperty -LiteralPath $whExcelSettings -Name wheelAction -Value 'scroll' -PropertyType String | Out-Null
-    foreach ($whExcelPair in @{ smoothAnimation=1; horizontalGestureMs=200; horizontalSwitching=1; reverseDirection=0; throttleMs=150; wrapAround=0 }.GetEnumerator()) {
+    foreach ($whExcelPair in @{ smoothAnimation=1; horizontalGestureMs=50; horizontalSwitching=1; reverseDirection=0; throttleMs=150; wrapAround=0 }.GetEnumerator()) {
         New-ItemProperty -LiteralPath $whExcelSettings -Name $whExcelPair.Key -Value $whExcelPair.Value -PropertyType DWord | Out-Null
     }
     if ((Get-FileHash -LiteralPath $whExcelTargetSource).Hash -ne (Get-FileHash -LiteralPath $whExcelSource).Hash) { throw 'Installed source verification failed.' }
@@ -47,7 +47,7 @@ try {
     # mod directly. Preserve the existing service and client sessions.
     if ((Get-Service Windhawk).Status -ne 'Running') { Start-Service -Name Windhawk }
     $whExcelReport = [ordered]@{
-        Status='installed'; Version='0.5.4'; HorizontalSwitching=$true
+        Status='installed'; Version='0.5.5'; HorizontalSwitching=$true
         Source=$whExcelTargetSource; Dll=$whExcelTargetDll
         ServiceStatus=(Get-Service Windhawk).Status.ToString()
         InstalledAt=(Get-Date).ToString('o')

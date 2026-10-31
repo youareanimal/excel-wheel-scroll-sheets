@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.5
+
+- Synchronize the standalone source with the published Windhawk catalog version, including horizontal-input failure replay, scrollbar and RTL safeguards.
+- Default horizontal gesture quiet period to 50 ms (range 50–2000 ms).
+- Use the catalog English README and preserve English default settings with zh-CN localization.
+- Refresh build/install version references and regression tests for the synchronized source.
+
+
 ## 0.5.4
 
 - 限制滚轮输入和 MSAA 查询到当前 Excel 进程的原生工作簿窗口，排除侧栏及嵌入子控件。

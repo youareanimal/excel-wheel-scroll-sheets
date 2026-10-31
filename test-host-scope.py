@@ -42,7 +42,7 @@ file = root / 'host-scope-test.cpp'
 file.write_text(test, encoding='utf-8')
 exe = root / 'host-scope-test.exe'
 compiler = Path(os.environ.get('WINDHAWK_DIR', r'C:\Program Files\Windhawk')) / 'Compiler' / 'bin' / 'clang++.exe'
-r = subprocess.run([str(compiler), '-std=c++23', '-static', str(file), '-o', str(exe)], capture_output=True, text=True)
+r = subprocess.run([os.environ.get('CXX') or (str(compiler) if os.name == 'nt' else 'g++'), '-std=c++23', '-static', str(file), '-o', str(exe)], capture_output=True, text=True)
 if r.returncode:
     print(r.stdout+r.stderr)
     raise SystemExit(r.returncode)

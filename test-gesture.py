@@ -12,6 +12,7 @@ test=r'''
 #include <cstdio>
 using HWND=void*;
 using DWORD=uint32_t;
+struct MSG {};
 constexpr int WHEEL_DELTA=120;
 '''+source[start:end]+r'''
 int main() {
@@ -41,6 +42,11 @@ int main() {
  assert(g.Accept(a,10598,120,200)); // Exactly 200 ms rearms.
  assert(g.Accept(a,10599,-120,200));
  assert(!g.Accept(a,10600,-240,200));
+ g.Reset();
+ assert(g.Accept(a,20000,120,50));
+ assert(!g.Accept(a,20049,120,50));
+ assert(g.Accept(a,20099,120,50));
+ assert(g.Accept(a,20100,-120,50));
  std::puts("PASS: repeat suppression, quiet rearm, reverse, window, partial delta, clock wrap");
 }
 '''
@@ -48,7 +54,7 @@ file=root/'gesture-test.cpp'
 file.write_text(test,encoding='utf-8')
 exe=root/'gesture-test.exe'
 compiler=Path(os.environ.get('WINDHAWK_DIR', r'C:\Program Files\Windhawk'))/'Compiler'/'bin'/'clang++.exe'
-r=subprocess.run([str(compiler),'-std=c++23','-static',str(file),'-o',str(exe)],capture_output=True,text=True)
+r=subprocess.run([os.environ.get('CXX') or (str(compiler) if os.name == 'nt' else 'g++'),'-std=c++23','-static',str(file),'-o',str(exe)],capture_output=True,text=True)
 print(r.stdout+r.stderr)
 if r.returncode: raise SystemExit(r.returncode)
 r=subprocess.run([str(exe)],capture_output=True,text=True)

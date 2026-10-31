@@ -148,7 +148,7 @@ test_path = args.output_dir / 'horizontal-fallback.cpp'
 test_path.write_text(prefix + gesture + '\nthread_local HorizontalGesture g_horizontalGesture;\n' + hook + tests, encoding='utf-8')
 exe = args.output_dir / 'horizontal-fallback.exe'
 compiler = Path(os.environ.get('WINDHAWK_DIR', r'C:\Program Files\Windhawk')) / 'Compiler' / 'bin' / 'clang++.exe'
-build = subprocess.run([str(compiler), '-std=c++23', '-static', str(test_path), '-o', str(exe)], capture_output=True, text=True)
+build = subprocess.run([os.environ.get('CXX') or (str(compiler) if os.name == 'nt' else 'g++'), '-std=c++23', '-static', str(test_path), '-o', str(exe)], capture_output=True, text=True)
 if build.returncode:
     print(build.stdout + build.stderr)
     raise SystemExit(build.returncode)
